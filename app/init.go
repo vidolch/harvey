@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/revel/revel"
+	"harvey/app/filters"
 )
 
 var (
@@ -27,6 +28,7 @@ func init() {
 		revel.InterceptorFilter,       // Run interceptors around the action.
 		revel.CompressFilter,          // Compress the result.
 		revel.BeforeAfterFilter,       // Call the before and after filter functions
+		filters.AuthFilter,	   		   // Authentication filter
 		revel.ActionInvoker,           // Invoke the action.
 	}
 

@@ -1,0 +1,2 @@
+p, admin, /games/*, *
+p, user, /games, GET
