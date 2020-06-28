@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,7 +18,7 @@ type GameService struct {
 }
 
 type RawGame struct {
-	_id string
+	Id string
 	Name string
 }
 
@@ -48,7 +47,7 @@ func NewGameService(db string, cl string, url string) (*GameService, error) {
 }
 
 func (c GameService) GetAll() []models.Game {
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 20*time.Second)
 	cur, err := c.Collection.Find(ctx, bson.D{})
 	if err != nil {
 		log.Fatal(err)
@@ -58,23 +57,31 @@ func (c GameService) GetAll() []models.Game {
 
 	var games []models.Game
 	for cur.Next(ctx) {
-		var result RawGame
+		var result models.Game
 		err := cur.Decode(&result)
 		if err != nil {
 			log.Fatal(err)
 		}
-		var game models.Game
-		game.Id = result._id
-		log.Fatal(result._id)
-		game.Name = result.Name
 
-		games = append(games, game)
+		games = append(games, result)
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}
 
 	return games
+}
+
+func (c GameService) GetById(id string) models.Game {
+	ctx, _ := context.WithTimeout(context.Background(), 20*time.Second)
+	filter := bson.M{"id" : id}
+	var result models.Game
+	err := c.Collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return result
 }
 
 func (c GameService) InsertGame(game models.Game) (string, error) {
@@ -87,13 +94,13 @@ func (c GameService) InsertGame(game models.Game) (string, error) {
 
 	game.Id = uuid.String()
 
-	res, err := c.Collection.InsertOne(ctx, game)
+	_, err = c.Collection.InsertOne(ctx, game)
 
 	if err != nil {
 		log.Fatal(err)
 		return "", err
 	}
 
-	id := fmt.Sprintf("%v", res.InsertedID)
+	id := game.Id
 	return id, nil
 }

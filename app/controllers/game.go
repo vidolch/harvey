@@ -28,8 +28,20 @@ func (c Game) GetAll() revel.Result {
 	return c.RenderJSON(response)
 }
 
-func (c Game) GetById() revel.Result {
-	return c.Render()
+func (c Game) GetById(id string) revel.Result {
+	gs, err := _getGameService()
+
+	if err != nil {
+		log.Fatal(err)
+		return c.RenderJSON(err)
+	}
+
+	res := gs.GetById(id)
+
+	response := views.JsonResponse{}
+	response.Data = res
+
+	return c.RenderJSON(response)
 }
 
 func (c Game) Insert() revel.Result {
@@ -48,7 +60,7 @@ func (c Game) Insert() revel.Result {
 		response.Error = "Internal error"
 		return c.RenderJSON(response)
 	}
-	response.Id = id
+	response.Data = id
 
 	return c.RenderJSON(response)
 }
