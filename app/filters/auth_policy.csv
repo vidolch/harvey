@@ -1,2 +1,3 @@
-p, admin, /games/*, *
-p, user, /games, GET
+p, user, /games, *
+p, anonymous, /login, *
+p, anonymous, /login/callback, *

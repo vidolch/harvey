@@ -5,15 +5,13 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/revel/revel"
 	"golang.org/x/oauth2"
-	"harvey/app/models/views"
-	"encoding/json"
 	"strings"
 )
 
-type App struct {
+type Auth struct {
 	*revel.Controller
 }
-func (c App) Callback() revel.Result {
+func (c Auth) Callback() revel.Result {
 	configURL := "https://auth.chalamov.dev/auth/realms/test"
 	ctx := context.Background()
 	provider, err := oidc.NewProvider(ctx, configURL)
@@ -24,7 +22,7 @@ func (c App) Callback() revel.Result {
 	clientID := "test-client"
 	clientSecret := "540fb896-a614-4932-b802-327b8696e663"
 
-	redirectURL := "http://harvey:8080/demo/callback"
+	redirectURL := "http://localhost:5010/login/callback"
 	// Configure an OpenID Connect aware OAuth2 client.
 	oauth2Config := oauth2.Config{
 		ClientID:     clientID,
@@ -36,11 +34,6 @@ func (c App) Callback() revel.Result {
 		Scopes: []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 
-	oidcConfig := &oidc.Config{
-		ClientID: clientID,
-	}
-	verifier := provider.Verifier(oidcConfig)
-
 	if c.Request.URL.Query().Get("state") != "somestate" {
 		return c.NotFound("40011")
 	}
@@ -49,31 +42,11 @@ func (c App) Callback() revel.Result {
 	if err != nil {
 		return c.NotFound( "Failed to exchange token: "+err.Error())
 	}
-	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
-	if !ok {
-		return c.NotFound( "No id_token field in oauth2 token.")
-	}
-	idToken, err := verifier.Verify(ctx, rawIDToken)
-	if err != nil {
-		return c.NotFound( "Failed to verify ID Token: "+err.Error())
-	}
 
-	resp := struct {
-		OAuth2Token   *oauth2.Token
-		IDTokenClaims *json.RawMessage // ID Token payload is just JSON.
-	}{oauth2Token, new(json.RawMessage)}
-
-	if err := idToken.Claims(&resp.IDTokenClaims); err != nil {
-		return c.NotFound( err.Error())
-	}
-	data, err := json.MarshalIndent(resp, "", "    ")
-	if err != nil {
-		return c.NotFound( err.Error())
-	}
-	return c.RenderJSON(data)
+	return c.RenderJSON(oauth2Token.AccessToken)
 }
 
-func (c App) Index() revel.Result {
+func (c Auth) Login() revel.Result {
 	configURL := "https://auth.chalamov.dev/auth/realms/test"
 	ctx := context.Background()
 	provider, err := oidc.NewProvider(ctx, configURL)
@@ -84,7 +57,7 @@ func (c App) Index() revel.Result {
 	clientID := "test-client"
 	clientSecret := "540fb896-a614-4932-b802-327b8696e663"
 
-	redirectURL := "http://harvey:8080/demo/callback"
+	redirectURL := "http://localhost:5010/login	/callback"
 	// Configure an OpenID Connect aware OAuth2 client.
 	oauth2Config := oauth2.Config{
 		ClientID:     clientID,
@@ -116,20 +89,4 @@ func (c App) Index() revel.Result {
 	}
 
 	return c.Render()
-}
-
-func (c App) ApiTest() revel.Result {
-	//gs, err := services.NewGameService("harvey", "games", "mongodb://localhost:27017")
-	//
-	//if err != nil {
-	//	log.Fatal(err)
-	//	return c.RenderJSON(err)
-	//}
-	//
-	//res := gs.GetAll()
-
-	response := views.JsonResponse{}
-	//response.Name = res
-
-	return c.RenderJSON(response)
 }

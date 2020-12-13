@@ -69,6 +69,7 @@ func (c GameService) GetAll() []models.Game {
 		log.Fatal(err)
 	}
 
+	ctx.Done()
 	return games
 }
 
@@ -81,6 +82,7 @@ func (c GameService) GetById(id string) models.Game {
 		log.Fatal(err)
 	}
 
+	ctx.Done()
 	return result
 }
 
@@ -102,5 +104,6 @@ func (c GameService) InsertGame(game models.Game) (string, error) {
 	}
 
 	id := game.Id
+	ctx.Done()
 	return id, nil
 }
